@@ -1,4 +1,4 @@
-use modular_stats::prelude::*;
+use game_stat::prelude::*;
 
 // just a reminder that you can type alias 
 // it's nice having to avoid Writing Stat<N> which can look a bit odd

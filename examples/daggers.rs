@@ -1,4 +1,4 @@
-use modular_stats::prelude::*;
+use game_stat::prelude::*;
 // info: A more complex example for how you could integrate this library in a game
 // I don't think anyone would ever write it like this, but nontheless, some example code :)
 
@@ -49,7 +49,7 @@ impl Player {
         // extract the modifier from the dagger stats
         let modifier_key_result = self
             .attack_damage_stat
-            .add_modifier(Modifier::Flat(new_dagger.attack_damage));
+            .add_modifier(StatModifier::Flat(new_dagger.attack_damage));
 
         // adding a modifier can fail if we exceed the max amount of modifiers
         // T should be carefully selected for for Stat<T>

@@ -1,4 +1,4 @@
-use crate::modifier::Modifier;
+use crate::modifier::StatModifier;
 use core::mem::MaybeUninit;
 use std::rc::{Rc, Weak};
 
@@ -9,7 +9,7 @@ pub struct Stat<const M: usize> {
 }
 
 pub struct ModifierMeta {
-    modifier: Modifier,
+    modifier: StatModifier,
     order: i32,
     owner_modifier_weak: Weak<ModifierKeyTag>,
 }
@@ -39,7 +39,7 @@ impl<const M: usize> Stat<M> {
         }
     }
 
-    pub fn add_modifier(&mut self, modifier: Modifier) -> Result<ModifierKey, AddModifierError> {
+    pub fn add_modifier(&mut self, modifier: StatModifier) -> Result<ModifierKey, AddModifierError> {
         match self.modifiers.iter_mut().filter(|m| m.is_none()).next() {
             Some(modifier_option) => {
                 let key = Rc::new(ModifierKeyTag);
@@ -56,7 +56,7 @@ impl<const M: usize> Stat<M> {
 
     pub fn add_modifier_with_order(
         &mut self,
-        modifier: Modifier,
+        modifier: StatModifier,
         order: i32,
     ) -> Result<ModifierKey, AddModifierError> {
         match self.modifiers.iter_mut().filter(|m| m.is_none()).next() {
