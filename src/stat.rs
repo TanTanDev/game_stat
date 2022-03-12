@@ -4,8 +4,8 @@ use std::rc::{Rc, Weak};
 
 pub struct Stat<const M: usize> {
     pub base_value: f32,
-    pub modifiers: [Option<ModifierMeta>; M],
-    pub cached_orders: [Option<(usize, i32)>; M],
+    modifiers: [Option<ModifierMeta>; M],
+    cached_orders: [Option<(usize, i32)>; M],
 }
 
 pub struct ModifierMeta {
