@@ -3,6 +3,13 @@ name = "game_stat"
 version = "0.1.0"
 edition = "2021"
 categories = ["game-development"]
+keyword = ["gamedev", "stats"]
+license = "MIT OR Apache-2.0"
+license-file = "LICENSE"
+readme = "README.md"
+description = "a library for handling stats that can change with modifiers, most commonly seen in games"
+repository = "https://github.com/TanTanDev/game_stat.git"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
