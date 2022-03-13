@@ -1,6 +1,6 @@
 //! [![](https://github.com/TanTanDev/game_stat/blob/main/branding/gamestat_logo.png)]()
-//! **game_stat** gives you the power to modify some base value through modifiers. Most commonly seen in video games 
-//! 
+//! **game_stat** gives you the power to modify some base value through modifiers. Most commonly seen in video games
+//!
 //! ```
 //! # use game_stat::prelude::*;
 //! let mut armor_stat: Stat<2> = Stat::new(10f32);
@@ -21,5 +21,5 @@ pub use crate::stat::*;
 
 pub mod prelude {
     pub use crate::modifier::StatModifier;
-    pub use crate::stat::{StatModifierHandle, Stat};
+    pub use crate::stat::{Stat, StatModifierHandle};
 }

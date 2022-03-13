@@ -3,17 +3,17 @@ use core::mem::MaybeUninit;
 use std::rc::{Rc, Weak};
 
 /// This handle is returned from calling ```stat.add_modifier()``` (technically it's returned in the Ok, result)
-/// 
+///
 /// the handle controlls the validity of a modifier.
 /// once dropped, the modifier is automatically removed from the [`super::Stat`] that created it
 pub type StatModifierHandle = Rc<StatModifierHandleTag>;
 
-/// Just an empty 'flavor' struct, to indicate that the [`StatModifierHandle`] is an owner of some value 
+/// Just an empty 'flavor' struct, to indicate that the [`StatModifierHandle`] is an owner of some value
 pub struct StatModifierHandleTag;
 
 /// a value that can be modified through [`super::StatModifier`]
-/// 
-/// ```const M: usize``` decides how many modifiers a stat can maximally hold (modifier are internally an array on the stack) 
+///
+/// ```const M: usize``` decides how many modifiers a stat can maximally hold (modifier are internally an array on the stack)
 pub struct Stat<const M: usize> {
     pub base_value: f32,
     // calculated from base_value and modifiers
@@ -64,9 +64,9 @@ impl<const M: usize> Stat<M> {
         modifier: StatModifier,
     ) -> Result<StatModifierHandle, AddModifierError> {
         // we have to update the modifiers array in case one has been dropped
-        // the modifier array could be full of data, yet have modifiers that aren't valid 
+        // the modifier array could be full of data, yet have modifiers that aren't valid
         // if we drop a modifier then add one right away, there should be space for it to be added
-        // this ensures the array is up to date  
+        // this ensures the array is up to date
         self.update_modifiers();
         match self.modifiers.iter_mut().filter(|m| m.is_none()).next() {
             Some(modifier_option) => {
@@ -90,9 +90,9 @@ impl<const M: usize> Stat<M> {
         order: i32,
     ) -> Result<StatModifierHandle, AddModifierError> {
         // we have to update the modifiers array in case one has been dropped
-        // the modifier array could be full of data, yet have modifiers that aren't valid 
+        // the modifier array could be full of data, yet have modifiers that aren't valid
         // if we drop a modifier then add one right away, there should be space for it to be added
-        // this ensures the array is up to date  
+        // this ensures the array is up to date
         self.update_modifiers();
         match self.modifiers.iter_mut().filter(|m| m.is_none()).next() {
             Some(modifier_option) => {

@@ -104,12 +104,11 @@ fn all() {
     assert!(modifier_2_result.is_err());
 }
 
-
 #[test]
 // cautionary tale:
 // I wanted to highlight that shadowing a modifier does not drop the original value until it goes out of scope
-// shadowing makes data unaccesable, but things like reference counted things, still point to valid data 
-// a shadowed value gets cleared up when leaving the current scope, not the moment it gets shadowed 
+// shadowing makes data unaccesable, but things like reference counted things, still point to valid data
+// a shadowed value gets cleared up when leaving the current scope, not the moment it gets shadowed
 fn key_shadowing() {
     let mut stat: Stat<2> = Stat::new(0f32);
     {
