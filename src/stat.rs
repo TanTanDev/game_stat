@@ -2,9 +2,18 @@ use crate::modifier::StatModifier;
 use core::mem::MaybeUninit;
 use std::rc::{Rc, Weak};
 
+/// This handle is returned from calling ```stat.add_modifier()``` (technically it's returned in the Ok, result)
+/// 
+/// the handle controlls the validity of a modifier.
+/// once dropped, the modifier is automatically removed from the [`super::Stat`] that created it
 pub type StatModifierHandle = Rc<StatModifierHandleTag>;
+
+/// Just an empty 'flavor' struct, to indicate that the [`StatModifierHandle`] is an owner of some value 
 pub struct StatModifierHandleTag;
 
+/// a value that can be modified through [`super::StatModifier`]
+/// 
+/// ```const M: usize``` decides how many modifiers a stat can maximally hold (modifier are internally an array on the stack) 
 pub struct Stat<const M: usize> {
     pub base_value: f32,
     // calculated from base_value and modifiers
@@ -22,6 +31,12 @@ pub struct ModifierMeta {
 pub struct AddModifierError;
 
 impl<const M: usize> Stat<M> {
+    /// ```
+    /// // EXAMPLE: creates a stat that can hold a maximum of 3 modifiers
+    /// # use game_stat::prelude::*;
+    /// let attack_stat: Stat<3> = Stat::new(0.0);
+    /// let attack_stat = Stat::<3>::new(0.0);
+    /// ```
     pub fn new(base_value: f32) -> Self {
         // DANGER DANGER! WARNING WARNING!
         let mut modifiers: [MaybeUninit<Option<ModifierMeta>>; M] =
@@ -43,6 +58,7 @@ impl<const M: usize> Stat<M> {
         }
     }
 
+    /// Add a modifier using the default order. [`super::StatModifier::default_order()`]
     pub fn add_modifier(
         &mut self,
         modifier: StatModifier,
