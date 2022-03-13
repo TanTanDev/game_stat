@@ -1,4 +1,4 @@
-![name-of-you-image](branding/gamestat_logo.png)
+![name-of-you-image](https://github.com/TanTanDev/game_stat/blob/main/branding/gamestat_logo.png?raw=true)
 
 # What is game_stat?
 a small rust library for handling stats that can change with modifiers. Equipped an epic sword? Then your attack stats could **increase by 40**. Recieved a debuff? Your movement speed could **decrease by 50%**.
