@@ -7,7 +7,7 @@ a small rust library for handling stats that can change with modifiers. Equipped
 ```rs
 let mut armor_stat: Stat<2> = Stat::new(10f32);
 {
-    let _modifier_key = armor_stat.add_modifier(Modifier::Flat(5f32));
+    let _modifier_handle = armor_stat.add_modifier(Modifier::Flat(5f32));
     println!("armor_stat is: {} it should be 15!", armor_stat.value());
 }
 println!("armor_stat is: {}, It should be 10!", armor_stat.value());
@@ -17,7 +17,7 @@ println!("armor_stat is: {}, It should be 10!", armor_stat.value());
 * We add a flat modifier, it is valid as long as the ```_modifier_key``` exists, which is why our value goes back to 10 when it gets dropped from the stack
 
 # features
-* say goodbye to ```stat.remove_modifier()```. This library has no such feature, instead a modifier is valid as long as a key exists. It's a cool idea, but I don't know yet if this design choice will be practical.
+* say goodbye to ```stat.remove_modifier()```. This library has no such feature, instead a modifier is valid as long as a handle to it exists. It's a cool idea, but I don't know yet if this design choice will be practical.
 * everything lives on the stack. (blessing, or curse you tell me... I just wanted to experiment with const generics). This is achieved by stating in stat creation what the max modifier count is. ```Stat<4>```
 
 # is it battle ready?
