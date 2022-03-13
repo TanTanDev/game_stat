@@ -21,7 +21,7 @@ pub struct Stat<const M: usize> {
     modifiers: [Option<ModifierMeta>; M],
 }
 
-pub struct ModifierMeta {
+struct ModifierMeta {
     modifier: StatModifier,
     order: i32,
     owner_modifier_weak: Weak<StatModifierHandleTag>,
