@@ -27,8 +27,10 @@ struct ModifierMeta {
     owner_modifier_weak: Weak<StatModifierHandleTag>,
 }
 
+/// this Stat can't hold any more modifiers
+/// the the [`Stat`] M size should be carefully selected. [`Stat<3>`] [`Stat<7>`]
 #[derive(Debug, Clone, Copy)]
-pub struct AddModifierError;
+pub struct ModifiersFullError;
 
 impl<const M: usize> Stat<M> {
     /// ```
@@ -62,7 +64,7 @@ impl<const M: usize> Stat<M> {
     pub fn add_modifier(
         &mut self,
         modifier: StatModifier,
-    ) -> Result<StatModifierHandle, AddModifierError> {
+    ) -> Result<StatModifierHandle, ModifiersFullError> {
         // we have to update the modifiers array in case one has been dropped
         // the modifier array could be full of data, yet have modifiers that aren't valid
         // if we drop a modifier then add one right away, there should be space for it to be added
@@ -80,7 +82,7 @@ impl<const M: usize> Stat<M> {
                 self.calculate_value();
                 Ok(key)
             }
-            None => Err(AddModifierError),
+            None => Err(ModifiersFullError),
         }
     }
 
@@ -88,7 +90,7 @@ impl<const M: usize> Stat<M> {
         &mut self,
         modifier: StatModifier,
         order: i32,
-    ) -> Result<StatModifierHandle, AddModifierError> {
+    ) -> Result<StatModifierHandle, ModifiersFullError> {
         // we have to update the modifiers array in case one has been dropped
         // the modifier array could be full of data, yet have modifiers that aren't valid
         // if we drop a modifier then add one right away, there should be space for it to be added
@@ -106,7 +108,7 @@ impl<const M: usize> Stat<M> {
                 self.calculate_value();
                 Ok(key)
             }
-            None => Err(AddModifierError),
+            None => Err(ModifiersFullError),
         }
     }
 
