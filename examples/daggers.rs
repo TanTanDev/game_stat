@@ -14,7 +14,7 @@ pub struct DaggerItem {
 
 pub struct Player {
     inventory: Vec<DaggerItem>,
-    hand: Option<(DaggerItem, ModifierKey)>,
+    hand: Option<(DaggerItem, StatModifierHandle)>,
     attack_damage_stat: Stat<MAX_STAT_MODIFIERS>,
 }
 

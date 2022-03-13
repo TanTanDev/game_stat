@@ -3,5 +3,5 @@ pub mod stat;
 
 pub mod prelude {
     pub use crate::modifier::StatModifier;
-    pub use crate::stat::{ModifierKey, Stat};
+    pub use crate::stat::{StatModifierHandle, Stat};
 }

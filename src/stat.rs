@@ -2,16 +2,20 @@ use crate::modifier::StatModifier;
 use core::mem::MaybeUninit;
 use std::rc::{Rc, Weak};
 
+pub type StatModifierHandle = Rc<StatModifierHandleTag>;
+pub struct StatModifierHandleTag;
+
 pub struct Stat<const M: usize> {
     pub base_value: f32,
+    // calculated from base_value and modifiers
+    value: f32,
     modifiers: [Option<ModifierMeta>; M],
-    cached_orders: [Option<(usize, i32)>; M],
 }
 
 pub struct ModifierMeta {
     modifier: StatModifier,
     order: i32,
-    owner_modifier_weak: Weak<ModifierKeyTag>,
+    owner_modifier_weak: Weak<StatModifierHandleTag>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -34,20 +38,30 @@ impl<const M: usize> Stat<M> {
         // hopefully we survived that :D
         Self {
             base_value,
+            value: base_value,
             modifiers,
-            cached_orders: [None; M],
         }
     }
 
-    pub fn add_modifier(&mut self, modifier: StatModifier) -> Result<ModifierKey, AddModifierError> {
+    pub fn add_modifier(
+        &mut self,
+        modifier: StatModifier,
+    ) -> Result<StatModifierHandle, AddModifierError> {
+        // we have to update the modifiers array in case one has been dropped
+        // the modifier array could be full of data, yet have modifiers that aren't valid 
+        // if we drop a modifier then add one right away, there should be space for it to be added
+        // this ensures the array is up to date  
+        self.update_modifiers();
         match self.modifiers.iter_mut().filter(|m| m.is_none()).next() {
             Some(modifier_option) => {
-                let key = Rc::new(ModifierKeyTag);
+                let key = Rc::new(StatModifierHandleTag);
                 *modifier_option = Some(ModifierMeta {
                     order: modifier.default_order(),
                     modifier,
                     owner_modifier_weak: Rc::downgrade(&key),
                 });
+                // value needs to update
+                self.calculate_value();
                 Ok(key)
             }
             None => Err(AddModifierError),
@@ -58,58 +72,71 @@ impl<const M: usize> Stat<M> {
         &mut self,
         modifier: StatModifier,
         order: i32,
-    ) -> Result<ModifierKey, AddModifierError> {
+    ) -> Result<StatModifierHandle, AddModifierError> {
+        // we have to update the modifiers array in case one has been dropped
+        // the modifier array could be full of data, yet have modifiers that aren't valid 
+        // if we drop a modifier then add one right away, there should be space for it to be added
+        // this ensures the array is up to date  
+        self.update_modifiers();
         match self.modifiers.iter_mut().filter(|m| m.is_none()).next() {
             Some(modifier_option) => {
-                let key = Rc::new(ModifierKeyTag);
+                let key = Rc::new(StatModifierHandleTag);
                 *modifier_option = Some(ModifierMeta {
                     modifier,
                     owner_modifier_weak: Rc::downgrade(&key),
                     order,
                 });
+                // value needs to update
+                self.calculate_value();
                 Ok(key)
             }
             None => Err(AddModifierError),
         }
     }
 
+    // check if any modifiers have been dropped, and update the value + array
+    fn update_modifiers(&mut self) {
+        let any_modifier_dropped = self
+            .modifiers
+            .iter()
+            .filter_map(|m| m.as_ref())
+            .any(|m| m.owner_modifier_weak.upgrade().is_none());
+        if any_modifier_dropped {
+            self.calculate_value();
+        }
+    }
+
+    /// returns the base_value with modifiers applied
     pub fn value(&mut self) -> f32 {
+        self.update_modifiers();
+        self.value
+    }
+
+    fn calculate_value(&mut self) {
         let mut value = self.base_value;
-        self.cached_orders.iter_mut().for_each(|v| *v = None);
-        let mut cache_index = 0;
-        self.modifiers.iter().enumerate().for_each(|(i, m)| {
-            if let Some(modifier) = m {
-                self.cached_orders[cache_index] = Some((i, modifier.order));
-                cache_index += 1;
-            }
-        });
-        // order
-        self.cached_orders.sort_by(|v1, v2| {
-            use std::cmp::Ordering;
-            if let Some(v1) = v1 {
-                if let Some(v2) = v2 {
-                    return v1.1.cmp(&v2.1);
-                }
-            }
-            Ordering::Equal
-        });
-        for order_option in self.cached_orders.iter() {
-            if let Some(order) = order_option {
-                let modifier_meta = self.modifiers[order.0].as_ref().unwrap();
-                if let Some(_owner) = modifier_meta.owner_modifier_weak.upgrade() {
-                    modifier_meta.modifier.apply(&mut value);
+
+        // order the modifiers
+        use std::cmp::Ordering;
+        self.modifiers.sort_by(|m1_option, m2_option| {
+            if let Some(m1) = m1_option {
+                if let Some(m2) = m2_option {
+                    m1.order.cmp(&m2.order)
                 } else {
-                    // owner droped the modifier, drop the reference first so we can take() and remove the modifier
-                    drop(modifier_meta);
-                    self.modifiers[order.0].take();
+                    Ordering::Less
                 }
             } else {
-                break;
+                Ordering::Greater
+            }
+        });
+        for modifier_meta_option in self.modifiers.iter_mut() {
+            if let Some(modifier_meta) = modifier_meta_option {
+                match modifier_meta.owner_modifier_weak.upgrade() {
+                    Some(_key) => modifier_meta.modifier.apply(&mut value),
+                    // owner has dropped the modifier, make this modifier available again
+                    None => *modifier_meta_option = None,
+                }
             }
         }
-        value
+        self.value = value;
     }
 }
-
-pub type ModifierKey = Rc<ModifierKeyTag>;
-pub struct ModifierKeyTag;
