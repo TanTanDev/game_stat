@@ -8,7 +8,7 @@ const MAX_STAT_MODIFIERS: usize = 2;
 pub struct DaggerItem {
     name: String,
     // our game data probably shouldn't deal with modifier directly
-    // a modifier will be later created using this value 
+    // a modifier will be later created using this value
     attack_damage: f32,
 }
 
