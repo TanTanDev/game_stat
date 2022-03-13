@@ -7,7 +7,7 @@ a small rust library for handling stats that can change with modifiers. Equipped
 ```rs
 let mut armor_stat: Stat<2> = Stat::new(10f32);
 {
-    let _modifier_handle = armor_stat.add_modifier(Modifier::Flat(5f32));
+    let _modifier_handle = armor_stat.add_modifier(StatModifier::Flat(5f32));
     println!("armor_stat is: {} it should be 15!", armor_stat.value());
 }
 println!("armor_stat is: {}, It should be 10!", armor_stat.value());
