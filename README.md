@@ -1,4 +1,9 @@
-![name-of-you-image](branding/gamestat_logo.png)
+![name-of-you-image](https://github.com/TanTanDev/game_stat/blob/main/branding/gamestat_logo.png?raw=true)
+
+[![Crates.io](https://img.shields.io/crates/v/game_stat.svg)](https://crates.io/crates/game_stat)
+[![docs.rs](https://img.shields.io/docsrs/game_stat.svg)](https://docs.rs/game_stat/latest/game_stat/)
+[![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](./LICENSE)
+[![Crates.io](https://img.shields.io/crates/d/game_stat.svg)](https://crates.io/crates/game_stat)
 
 # What is game_stat?
 a small rust library for handling stats that can change with modifiers. Equipped an epic sword? Then your attack stats could **increase by 40**. Recieved a debuff? Your movement speed could **decrease by 50%**.
