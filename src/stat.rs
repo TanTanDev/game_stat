@@ -80,7 +80,7 @@ impl<const M: usize> Stat<M> {
         // if we drop a modifier then add one right away, there should be space for it to be added
         // this ensures the array is up to date
         self.update_modifiers();
-        match self.modifiers.iter_mut().filter(|m| m.is_none()).next() {
+        match self.modifiers.iter_mut().find(|m| m.is_none()) {
             Some(modifier_option) => {
                 let key = ReferenceCounted::new(StatModifierHandleTag);
                 *modifier_option = Some(ModifierMeta {
@@ -106,7 +106,7 @@ impl<const M: usize> Stat<M> {
         // if we drop a modifier then add one right away, there should be space for it to be added
         // this ensures the array is up to date
         self.update_modifiers();
-        match self.modifiers.iter_mut().filter(|m| m.is_none()).next() {
+        match self.modifiers.iter_mut().find(|m| m.is_none()) {
             Some(modifier_option) => {
                 let key = ReferenceCounted::new(StatModifierHandleTag);
                 *modifier_option = Some(ModifierMeta {
@@ -156,6 +156,8 @@ impl<const M: usize> Stat<M> {
                 Ordering::Greater
             }
         });
+        // hide CLIPPY: we modify the upper nested value, *modifier_meta_option = None
+        #[allow(clippy::manual_flatten)]
         for modifier_meta_option in self.modifiers.iter_mut() {
             if let Some(modifier_meta) = modifier_meta_option {
                 match modifier_meta.owner_modifier_weak.upgrade() {
