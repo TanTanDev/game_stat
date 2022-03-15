@@ -13,6 +13,9 @@
 //! * [`Stat<2>`] is a stat that can hold a maximum of 2 modifiers. (the modifiers is an array internally, carefully select a sensible value)
 //! * ```armor_stat.value()``` returns our stat value based on what modifiers are active.
 //! * We add a [`StatModifier`], it is valid as long as the [`StatModifierHandle`] that is returned from [`Stat::add_modifier()`] exists, which is why our value goes back to 10 when it gets dropped from the stack
+//!
+//! # crate features:
+//! **sync**: if Stat is needed in a multithreaded environment, enable this
 
 mod modifier;
 mod stat;

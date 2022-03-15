@@ -1,12 +1,22 @@
 use crate::modifier::StatModifier;
 use core::mem::MaybeUninit;
-use std::rc::{Rc, Weak};
+
+// by default (single-threaded) implementation is most optimized by using std::rc
+// if one needs Stat to live in a multithreaded environment, enabling sync feature uses std::sync instead
+#[cfg(not(feature = "sync"))]
+type ReferenceCounted<T> = std::rc::Rc<T>;
+#[cfg(not(feature = "sync"))]
+type Weak<T> = std::rc::Weak<T>;
+#[cfg(feature = "sync")]
+type ReferenceCounted<T> = std::sync::Arc<T>;
+#[cfg(feature = "sync")]
+type Weak<T> = std::sync::Weak<T>;
 
 /// This handle is returned from calling ```stat.add_modifier()``` (technically it's returned in the Ok, result)
 ///
 /// the handle controlls the validity of a modifier.
 /// once dropped, the modifier is automatically removed from the [`super::Stat`] that created it
-pub type StatModifierHandle = Rc<StatModifierHandleTag>;
+pub type StatModifierHandle = ReferenceCounted<StatModifierHandleTag>;
 
 /// Just an empty 'flavor' struct, to indicate that the [`StatModifierHandle`] is an owner of some value
 pub struct StatModifierHandleTag;
@@ -72,11 +82,11 @@ impl<const M: usize> Stat<M> {
         self.update_modifiers();
         match self.modifiers.iter_mut().filter(|m| m.is_none()).next() {
             Some(modifier_option) => {
-                let key = Rc::new(StatModifierHandleTag);
+                let key = ReferenceCounted::new(StatModifierHandleTag);
                 *modifier_option = Some(ModifierMeta {
                     order: modifier.default_order(),
                     modifier,
-                    owner_modifier_weak: Rc::downgrade(&key),
+                    owner_modifier_weak: ReferenceCounted::downgrade(&key),
                 });
                 // value needs to update
                 self.calculate_value();
@@ -98,10 +108,10 @@ impl<const M: usize> Stat<M> {
         self.update_modifiers();
         match self.modifiers.iter_mut().filter(|m| m.is_none()).next() {
             Some(modifier_option) => {
-                let key = Rc::new(StatModifierHandleTag);
+                let key = ReferenceCounted::new(StatModifierHandleTag);
                 *modifier_option = Some(ModifierMeta {
                     modifier,
-                    owner_modifier_weak: Rc::downgrade(&key),
+                    owner_modifier_weak: ReferenceCounted::downgrade(&key),
                     order,
                 });
                 // value needs to update
