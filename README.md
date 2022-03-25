@@ -9,7 +9,7 @@
 
 # game_stat
 
-`game_stat` is a small Rust library for handling stats that can change with modifiers. Equipped an epic sword? Then your attack stats could **increase by 40**. Recieved a debuff? Your movement speed could **decrease by 50%**.
+`game_stat` is a small Rust library for handling stats that can change with modifiers. Equipped an epic sword? Then your attack stats could **increase by 40**. Received a debuff? Your movement speed could **decrease by 50%**.
 
 ## Example code
 
