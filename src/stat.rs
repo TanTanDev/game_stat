@@ -1,7 +1,7 @@
 use crate::modifier::StatModifier;
 use core::mem::MaybeUninit;
 
-// by default (single-threaded) implementation is most optimized by using std::rc
+// By default (single-threaded) implementation is most optimized by using std::rc
 // if one needs Stat to live in a multithreaded environment, enabling sync feature uses std::sync instead
 #[cfg(not(feature = "sync"))]
 type ReferenceCounted<T> = std::rc::Rc<T>;
@@ -12,16 +12,16 @@ type ReferenceCounted<T> = std::sync::Arc<T>;
 #[cfg(feature = "sync")]
 type Weak<T> = std::sync::Weak<T>;
 
-/// This handle is returned from calling ```stat.add_modifier()``` (technically it's returned in the Ok, result)
+/// This handle is returned from calling ```stat.add_modifier()``` (technically it's returned in the Ok, result).
 ///
-/// the handle controlls the validity of a modifier.
-/// once dropped, the modifier is automatically removed from the [`super::Stat`] that created it
+/// The handle controls the validity of a modifier.
+/// Once dropped, the modifier is automatically removed from the [`super::Stat`] that created it.
 pub type StatModifierHandle = ReferenceCounted<StatModifierHandleTag>;
 
 /// Just an empty 'flavor' struct, to indicate that the [`StatModifierHandle`] is an owner of some value
 pub struct StatModifierHandleTag;
 
-/// a value that can be modified through [`super::StatModifier`]
+/// A value that can be modified through [`super::StatModifier`]
 ///
 /// ```const M: usize``` decides how many modifiers a stat can maximally hold (modifier are internally an array on the stack)
 pub struct Stat<const M: usize> {
@@ -37,14 +37,14 @@ struct ModifierMeta {
     owner_modifier_weak: Weak<StatModifierHandleTag>,
 }
 
-/// this Stat can't hold any more modifiers
-/// the the [`Stat`] M size should be carefully selected. [`Stat<3>`] [`Stat<7>`]
+/// This stat can't hold any more modifiers.
+/// The [`Stat`] M size should be carefully selected. [`Stat<3>`] [`Stat<7>`]
 #[derive(Debug, Clone, Copy)]
 pub struct ModifiersFullError;
 
 impl<const M: usize> Stat<M> {
     /// ```
-    /// // EXAMPLE: creates a stat that can hold a maximum of 3 modifiers
+    /// // EXAMPLE: Creates a stat that can hold a maximum of 3 modifiers
     /// # use game_stat::prelude::*;
     /// let attack_stat: Stat<3> = Stat::new(0.0);
     /// let attack_stat = Stat::<3>::new(0.0);
@@ -75,10 +75,10 @@ impl<const M: usize> Stat<M> {
         &mut self,
         modifier: StatModifier,
     ) -> Result<StatModifierHandle, ModifiersFullError> {
-        // we have to update the modifiers array in case one has been dropped
-        // the modifier array could be full of data, yet have modifiers that aren't valid
-        // if we drop a modifier then add one right away, there should be space for it to be added
-        // this ensures the array is up to date
+        // We have to update the modifiers array in case one has been dropped.
+        // The modifier array could be full of data, yet have modifiers that aren't valid.
+        // If we drop a modifier and then add one right away, there should be space for it to be added.
+        // This ensures the array is up to date.
         self.update_modifiers();
         match self.modifiers.iter_mut().find(|m| m.is_none()) {
             Some(modifier_option) => {
@@ -101,10 +101,10 @@ impl<const M: usize> Stat<M> {
         modifier: StatModifier,
         order: i32,
     ) -> Result<StatModifierHandle, ModifiersFullError> {
-        // we have to update the modifiers array in case one has been dropped
-        // the modifier array could be full of data, yet have modifiers that aren't valid
-        // if we drop a modifier then add one right away, there should be space for it to be added
-        // this ensures the array is up to date
+        // We have to update the modifiers array in case one has been dropped.
+        // The modifier array could be full of data, yet have modifiers that aren't valid.
+        // If we drop a modifier and then add one right away, there should be space for it to be added.
+        // This ensures the array is up to date.
         self.update_modifiers();
         match self.modifiers.iter_mut().find(|m| m.is_none()) {
             Some(modifier_option) => {
@@ -134,7 +134,7 @@ impl<const M: usize> Stat<M> {
         }
     }
 
-    /// returns the base_value with modifiers applied
+    /// Returns the base_value with modifiers applied
     pub fn value(&mut self) -> f32 {
         self.update_modifiers();
         self.value
@@ -143,7 +143,7 @@ impl<const M: usize> Stat<M> {
     fn calculate_value(&mut self) {
         let mut value = self.base_value;
 
-        // order the modifiers
+        // Order the modifiers
         use std::cmp::Ordering;
         self.modifiers.sort_by(|m1_option, m2_option| {
             if let Some(m1) = m1_option {
