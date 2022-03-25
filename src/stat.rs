@@ -50,23 +50,11 @@ impl<const M: usize> Stat<M> {
     /// let attack_stat = Stat::<3>::new(0.0);
     /// ```
     pub fn new(base_value: f32) -> Self {
-        // DANGER DANGER! WARNING WARNING!
-        let mut modifiers: [MaybeUninit<Option<ModifierMeta>>; M] =
-            unsafe { MaybeUninit::uninit().assume_init() };
-        modifiers[..].iter_mut().for_each(|elem| {
-            elem.write(None);
-        });
-        let modifiers = unsafe {
-            modifiers
-                .as_ptr()
-                .cast::<[Option<ModifierMeta>; M]>()
-                .read()
-        };
-        // hopefully we survived that :D
+        const NONE: Option<ModifierMeta> = None;
         Self {
             base_value,
             value: base_value,
-            modifiers,
+            modifiers: [NONE; M],
         }
     }
 
