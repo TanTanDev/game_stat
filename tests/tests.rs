@@ -127,17 +127,17 @@ fn key_shadowing() {
 pub fn multithreaded_environment() {
     use std::sync::{Arc, Mutex};
     use std::thread::*;
-    let mut stat = Arc::new(Mutex::new(Stat::<2>::new(0.0f32)));
+    let stat = Arc::new(Mutex::new(Stat::<2>::new(0.0f32)));
     let stat_thread_1 = stat.clone();
     let stat_thread_2 = stat.clone();
     let handle_1 = spawn(move || {
-        let modifier_handle = stat_thread_1
+        let _modifier_handle = stat_thread_1
             .lock()
             .unwrap()
             .add_modifier(StatModifier::Flat(1.0));
     });
     let handle_2 = spawn(move || {
-        let modifier_handle = stat_thread_2
+        let _modifier_handle = stat_thread_2
             .lock()
             .unwrap()
             .add_modifier(StatModifier::Flat(1.0));

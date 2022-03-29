@@ -1,5 +1,4 @@
 use crate::modifier::StatModifier;
-use core::mem::MaybeUninit;
 
 // By default (single-threaded) implementation is most optimized by using std::rc
 // if one needs Stat to live in a multithreaded environment, enabling sync feature uses std::sync instead
