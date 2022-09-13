@@ -31,6 +31,13 @@ pub struct Stat<const M: usize> {
     modifiers: [Option<ModifierMeta>; M],
 }
 
+/// create a stat from i32 (Stat is always internally a f32)
+impl<const M: usize> From<i32> for Stat<M> {
+    fn from(value: i32) -> Self {
+        Self::new(value as f32)
+    }
+}
+
 #[derive(Clone)]
 struct ModifierMeta {
     modifier: StatModifier,
