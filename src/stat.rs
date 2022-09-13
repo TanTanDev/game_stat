@@ -23,6 +23,7 @@ pub struct StatModifierHandleTag;
 /// A value that can be modified through [`super::StatModifier`]
 ///
 /// ```const M: usize``` decides how many modifiers a stat can maximally hold (modifier are internally an array on the stack)
+#[derive(Clone)]
 pub struct Stat<const M: usize> {
     pub base_value: f32,
     // calculated from base_value and modifiers
@@ -30,6 +31,7 @@ pub struct Stat<const M: usize> {
     modifiers: [Option<ModifierMeta>; M],
 }
 
+#[derive(Clone)]
 struct ModifierMeta {
     modifier: StatModifier,
     order: i32,
