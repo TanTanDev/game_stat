@@ -17,6 +17,6 @@ serde = { version = "1.0", optional = true, features = ["derive", "rc"] }
 tinyvec = {version = "1.6", features = ["alloc", "rustc_1_55"] }
 
 [features]
-default = ["serde"]
+default = []
 sync = []
 serde = ["dep:serde"]
