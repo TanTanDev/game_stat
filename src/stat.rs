@@ -149,7 +149,6 @@ impl<const M: usize> Stat<M> {
 
         let mut modifiers = borrow_cell(&self.modifiers);
         if modifiers.len() + 1 > modifiers.capacity() {
-            println!("moved to heap adding modifier");
             modifiers.move_to_the_heap();
         }
         modifiers.push(meta);
