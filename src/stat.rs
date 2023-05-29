@@ -54,7 +54,7 @@ fn borrow_cell<T>(cell: &InteriorCell<T>) -> std::sync::MutexGuard<T> {
 pub type StatModifierHandle = ReferenceCounted<StatModifierHandleTag>;
 
 /// Just an empty 'flavor' struct, to indicate that the [`StatModifierHandle`] is an owner of some value
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StatModifierHandleTag;
 
@@ -191,12 +191,18 @@ impl<const M: usize> Stat<M> {
     // check if any modifiers have been dropped, and update the value + array
     /// panics if refcell is borrowed
     fn update_modifiers(&self) {
-        let modifiers = borrow_cell(&self.modifiers);
-        let any_modifier_dropped = modifiers
-            .iter()
-            .any(|m| m.owner_modifier_weak.upgrade().is_none());
+        let mut modifiers = borrow_cell(&self.modifiers);
+        let mut any_modifier_dropped = false;
 
+        modifiers.retain(|m| {
+            let retain = m.owner_modifier_weak.upgrade().is_some();
+            if !retain {
+                any_modifier_dropped = true;
+            }
+            retain
+        });
         drop(modifiers);
+
         if any_modifier_dropped {
             self.calculate_internal_value();
         }

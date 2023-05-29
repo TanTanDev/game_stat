@@ -117,6 +117,34 @@ fn integrated_modifiers() {
     assert_eq!(stat.value(), 20f32);
 }
 
+// test that tinyvec internally doesn't mess anything up when changing heaps
+#[test]
+fn integrated_modifiers_overflow() {
+    let mut stat: Stat<1> = Stat::new(10f32);
+    let _modifier_key = stat.add_modifier(StatModifier::Flat(10f32));
+
+    let mut other_stat: Stat<1> = Stat::new(5f32);
+    let _modifier_key = other_stat.add_modifier(StatModifier::Flat(10f32));
+    let _modifier_key = other_stat.add_modifier(StatModifier::Flat(10f32));
+
+    assert_eq!(stat.value_with_integrated_modifiers(&other_stat), 40f32);
+}
+
+#[test]
+fn integrated_modifiers_dropped_later() {
+    let mut stat: Stat<1> = Stat::new(10f32);
+    let _modifier_key = stat.add_modifier(StatModifier::Flat(10f32));
+
+    let mut other_stat: Stat<1> = Stat::new(5f32);
+    let mut handles = vec![];
+    handles.push(other_stat.add_modifier(StatModifier::Flat(10f32)));
+    handles.push(other_stat.add_modifier(StatModifier::Flat(10f32)));
+
+    assert_eq!(stat.value_with_integrated_modifiers(&other_stat), 40f32);
+    drop(handles);
+    assert_eq!(stat.value_with_integrated_modifiers(&other_stat), 20f32);
+}
+
 #[test]
 fn other_base_value() {
     let mut stat: Stat<3> = Stat::new(10f32);
