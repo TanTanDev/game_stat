@@ -64,15 +64,15 @@ fn all_modifiers_reverse_order() {
 }
 
 #[test]
-// test that if we try to add more modifiers than we set it up to support
-// in this test, only 2 flat modifiers should be applied
-fn to_many_modifiers() {
+// adding more modifiers than we initially set it up to support
+// should internally move the TinyVec to the heap
+fn internally_move_to_heap() {
     let mut stat: Stat<2> = Stat::new(0f32);
     let _modifier_1 = stat.add_modifier(StatModifier::Flat(1.0f32));
     let _modifier_2 = stat.add_modifier_with_order(StatModifier::Flat(1.0f32), 0);
-    let modifier_3 = stat.add_modifier_with_order(StatModifier::Flat(1.0f32), 0);
-    assert!(stat.value() == 2f32);
-    assert!(modifier_3.is_err());
+    let _modifier_3 = stat.add_modifier_with_order(StatModifier::Flat(1.0f32), 0);
+    let _modifier_4 = stat.add_modifier_with_order(StatModifier::Flat(1.0f32), 0);
+    assert!(stat.value() == 4f32);
 }
 
 #[test]
@@ -100,8 +100,6 @@ fn all() {
     assert!(stat.value() == 5f32);
     let _modifier_2 = stat.add_modifier(StatModifier::Flat(9.0f32));
     assert!(stat.value() == 14f32);
-    let modifier_2_result = stat.add_modifier(StatModifier::Flat(9.0f32));
-    assert!(modifier_2_result.is_err());
 }
 
 #[test]

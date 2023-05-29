@@ -22,23 +22,20 @@ let mut armor_stat: Stat<2> = Stat::new(10f32);
 println!("armor_stat is: {}, It should be 10!", armor_stat.value());
 ```
 
-* This code creates a `Stat<2>`, meaning it can hold a maximum of 2 modifiers (a design decision explained later).
+* `Stat<2>` This library uses TinyVec internally to hold modifiers (for optimization). A value of 2 means we can hold 2 modifiers on the stack, if exceeded we'll internally move them to the heap.
 * `armor_stat.value()` returns our stat value based on what modifiers are active.
-* We add a flat modifier, it is valid as long as the `_modifier_key` exists, which is why our value goes back to 10 when it gets dropped from the stack.
+* We add a flat modifier, it is valid as long as the `_modifier_handle` exists, which is why our value goes back to 10 when it gets dropped from the stack.
 
 ## Features
 
 * Say goodbye to `stat.remove_modifier()`. This library has no such feature, instead a modifier is valid as long as a handle to it exists. It's a cool idea, but I don't know yet if this design choice will be practical.
-* Everything lives on the stack. (blessing or curse, you tell me... I just wanted to experiment with const generics). This is achieved by stating in stat creation what the max modifier count is `Stat<4>`.
 * Customizable Modifier order (optional), some games might require a more customizable Modifier application, use `stat.add_modifier_with_order()` instead of `stat.add_modifier()`.
 
 ## Is it battle ready?
 
-I have not used this library in any real project yet. My design choices sounds good on paper, but is it useful? Time will tell.
-
-## API design goals
-
-* **Tiny**, laser focused. no external dependencies (except for std)
+No major project has been completed with this yet.
+I'm not sure of it's stability/performance, considering I'm internally using mutex with `sync` feature enabled, and interior mutability.
+I'm currently testing this library for a tower defence game. Time will tell :)
 
 ## License
 

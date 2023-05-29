@@ -47,13 +47,12 @@ impl Player {
         // move from inventory to hand
         let new_dagger = self.inventory.remove(i);
         // extract the modifier from the dagger stats
-        let modifier_key_result = self
+        let modifier_key = self
             .attack_damage_stat
             .add_modifier(StatModifier::Flat(new_dagger.attack_damage));
 
         // adding a modifier can fail if we exceed the max amount of modifiers
         // T should be carefully selected for for Stat<T>
-        let modifier_key = modifier_key_result.expect("");
         self.hand = Some((new_dagger, modifier_key));
     }
 

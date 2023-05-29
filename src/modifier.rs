@@ -10,6 +10,12 @@ pub enum StatModifier {
     PercentMultiply(f32),
 }
 
+impl Default for StatModifier {
+    fn default() -> Self {
+        Self::Flat(0f32)
+    }
+}
+
 impl StatModifier {
     /// Modifies the input value based on the StateModifier variant
     pub fn apply(&self, value: &mut f32) {

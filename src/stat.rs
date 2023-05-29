@@ -1,4 +1,5 @@
 use crate::modifier::StatModifier;
+use tinyvec::{ArrayVec, TinyVec};
 
 // By default (single-threaded) implementation is most optimized by using std::rc
 // if one needs Stat to live in a multithreaded environment, enabling sync feature uses std::sync instead
@@ -68,14 +69,8 @@ pub struct Stat<const M: usize> {
     #[cfg_attr(feature = "serde", serde(skip, default = "default_value"))]
     value: InteriorCell<f32>,
 
-    #[cfg_attr(feature = "serde", serde(skip, default = "default_modifiers"))]
-    modifiers: InteriorCell<[Option<ModifierMeta>; M]>,
-}
-
-#[cfg(feature = "serde")]
-fn default_modifiers<const M: usize>() -> InteriorCell<[Option<ModifierMeta>; M]> {
-    const NONE: Option<ModifierMeta> = None;
-    new_interior_cell([NONE; M])
+    #[cfg_attr(feature = "serde", serde(skip))]
+    modifiers: InteriorCell<TinyVec<[ModifierMeta; M]>>,
 }
 
 #[cfg(feature = "serde")]
@@ -104,10 +99,15 @@ struct ModifierMeta {
     owner_modifier_weak: Weak<StatModifierHandleTag>,
 }
 
-/// This stat can't hold any more modifiers.
-/// The [`Stat`] M size should be carefully selected. [`Stat<3>`] [`Stat<7>`]
-#[derive(Debug, Clone, Copy)]
-pub struct ModifiersFullError;
+impl Default for ModifierMeta {
+    fn default() -> Self {
+        Self {
+            modifier: StatModifier::default(),
+            order: 0,
+            owner_modifier_weak: Weak::default(),
+        }
+    }
+}
 
 impl<const M: usize> Default for Stat<M> {
     fn default() -> Self {
@@ -123,44 +123,38 @@ impl<const M: usize> Stat<M> {
     /// let attack_stat = Stat::<3>::new(0.0);
     /// ```
     pub fn new(base_value: f32) -> Self {
-        const NONE: Option<ModifierMeta> = None;
+        let modifiers = TinyVec::Inline(ArrayVec::<[ModifierMeta; M]>::default());
         Self {
             base_value,
             value: new_interior_cell(base_value),
-            modifiers: new_interior_cell([NONE; M]),
-            // value: InteriorCell::new(base_value),
-            // modifiers: InteriorCell::new([NONE; M]),
+            modifiers: new_interior_cell(modifiers),
         }
     }
 
     /// Add a modifier using the default order. [`super::StatModifier::default_order()`]
     /// panics if refcell is borrowed
-    pub fn add_modifier(
-        &mut self,
-        modifier: StatModifier,
-    ) -> Result<StatModifierHandle, ModifiersFullError> {
+    pub fn add_modifier(&mut self, modifier: StatModifier) -> StatModifierHandle {
         // We have to update the modifiers array in case one has been dropped.
         // The modifier array could be full of data, yet have modifiers that aren't valid.
         // If we drop a modifier and then add one right away, there should be space for it to be added.
         // This ensures the array is up to date.
         self.update_modifiers();
-        let handle = match borrow_cell(&self.modifiers)
-            .iter_mut()
-            .find(|m| m.is_none())
-        {
-            Some(modifier_option) => {
-                let key = ReferenceCounted::new(StatModifierHandleTag);
-                *modifier_option = Some(ModifierMeta {
-                    order: modifier.default_order(),
-                    modifier,
-                    owner_modifier_weak: ReferenceCounted::downgrade(&key),
-                });
-                Ok(key)
-            }
-            None => {
-                return Err(ModifiersFullError);
-            }
+
+        let handle = ReferenceCounted::new(StatModifierHandleTag);
+        let meta = ModifierMeta {
+            order: modifier.default_order(),
+            modifier,
+            owner_modifier_weak: ReferenceCounted::downgrade(&handle),
         };
+
+        let mut modifiers = borrow_cell(&self.modifiers);
+        if modifiers.len() + 1 > modifiers.capacity() {
+            println!("moved to heap adding modifier");
+            modifiers.move_to_the_heap();
+        }
+        modifiers.push(meta);
+        drop(modifiers);
+
         self.calculate_internal_value();
         handle
     }
@@ -170,29 +164,25 @@ impl<const M: usize> Stat<M> {
         &mut self,
         modifier: StatModifier,
         order: i32,
-    ) -> Result<StatModifierHandle, ModifiersFullError> {
+    ) -> StatModifierHandle {
         // We have to update the modifiers array in case one has been dropped.
         // The modifier array could be full of data, yet have modifiers that aren't valid.
         // If we drop a modifier and then add one right away, there should be space for it to be added.
         // This ensures the array is up to date.
         self.update_modifiers();
-        let handle = match borrow_cell(&self.modifiers)
-            .iter_mut()
-            .find(|m| m.is_none())
-        {
-            Some(modifier_option) => {
-                let key = ReferenceCounted::new(StatModifierHandleTag);
-                *modifier_option = Some(ModifierMeta {
-                    modifier,
-                    owner_modifier_weak: ReferenceCounted::downgrade(&key),
-                    order,
-                });
-                Ok(key)
-            }
-            None => {
-                return Err(ModifiersFullError);
-            }
+        let handle = ReferenceCounted::new(StatModifierHandleTag);
+        let modifier_meta = ModifierMeta {
+            modifier,
+            owner_modifier_weak: ReferenceCounted::downgrade(&handle),
+            order,
         };
+
+        let mut modifiers = borrow_cell(&self.modifiers);
+        if modifiers.len() + 1 > modifiers.capacity() {
+            modifiers.move_to_the_heap();
+        }
+        modifiers.push(modifier_meta);
+        drop(modifiers);
 
         // value needs to update
         self.calculate_internal_value();
@@ -202,10 +192,12 @@ impl<const M: usize> Stat<M> {
     // check if any modifiers have been dropped, and update the value + array
     /// panics if refcell is borrowed
     fn update_modifiers(&self) {
-        let any_modifier_dropped = borrow_cell(&self.modifiers)
+        let modifiers = borrow_cell(&self.modifiers);
+        let any_modifier_dropped = modifiers
             .iter()
-            .filter_map(|m| m.as_ref())
             .any(|m| m.owner_modifier_weak.upgrade().is_none());
+
+        drop(modifiers);
         if any_modifier_dropped {
             self.calculate_internal_value();
         }
@@ -218,20 +210,16 @@ impl<const M: usize> Stat<M> {
     pub fn value_with_integrated_modifiers(&mut self, other_stat: &Self) -> f32 {
         other_stat.update_modifiers();
         let highest_order = self.highest_order();
-        // temporarily hold handles
-        const NONE: Result<StatModifierHandle, ModifiersFullError> = Err(ModifiersFullError);
-        let mut handles: [Result<StatModifierHandle, ModifiersFullError>; M] = [NONE; M];
+        // temporarily hold handles, Optional to sneakily instantiate array
+        const NONE: Option<StatModifierHandle> = None;
+        let mut handles: [Option<StatModifierHandle>; M] = [NONE; M];
 
         let mut other_modifiers = borrow_cell(&other_stat.modifiers);
-        for (i, modifier) in other_modifiers
-            .iter_mut()
-            .filter_map(|modifier| modifier.as_ref())
-            .enumerate()
-        {
-            handles[i] = self.add_modifier_with_order(
+        for (i, modifier) in other_modifiers.iter_mut().enumerate() {
+            handles[i] = Some(self.add_modifier_with_order(
                 modifier.modifier.clone(),
                 highest_order + 1 + modifier.order,
-            );
+            ));
         }
         self.value()
     }
@@ -243,7 +231,6 @@ impl<const M: usize> Stat<M> {
         let modifiers = borrow_cell(&self.modifiers);
         modifiers
             .iter()
-            .flatten()
             .map(|modifier_meta| modifier_meta.order)
             .max()
             .unwrap_or(0)
@@ -256,7 +243,7 @@ impl<const M: usize> Stat<M> {
         *borrow_cell(&self.value)
     }
 
-    /// Returns the INPUT base_value with modifiers applied
+    /// Returns the INPUT base_value (ignores self) with modifiers applied
     /// panics if refcell is borrowed
     pub fn value_with_base(&self, base_value: f32) -> f32 {
         let mut value = base_value;
@@ -279,31 +266,18 @@ impl<const M: usize> Stat<M> {
         let mut internal_value = borrow_cell(&self.value);
         *internal_value = value;
     }
-    // modifiers: InteriorCell<[Option<ModifierMeta>; M]>,
 
-    fn order_modifiers(modifiers: &mut RefMut<[Option<ModifierMeta>; M]>) {
-        use std::cmp::Ordering;
-        modifiers.sort_by(|m1_option, m2_option| {
-            if let Some(m1) = m1_option {
-                if let Some(m2) = m2_option {
-                    m1.order.cmp(&m2.order)
-                } else {
-                    Ordering::Less
-                }
-            } else {
-                Ordering::Greater
-            }
-        });
+    fn order_modifiers(modifiers: &mut RefMut<TinyVec<[ModifierMeta; M]>>) {
+        modifiers.sort_by(|m1, m2| m1.order.cmp(&m2.order));
     }
 
-    fn apply_modifiers_to_value(mut modifiers: RefMut<[Option<ModifierMeta>; M]>, value: &mut f32) {
-        for modifier_meta_option in modifiers.iter_mut() {
-            if let Some(modifier_meta) = modifier_meta_option {
-                match modifier_meta.owner_modifier_weak.upgrade() {
-                    Some(_key) => modifier_meta.modifier.apply(value),
-                    // owner has dropped the modifier, make this modifier available again
-                    None => *modifier_meta_option = None,
-                }
+    fn apply_modifiers_to_value(
+        mut modifiers: RefMut<TinyVec<[ModifierMeta; M]>>,
+        value: &mut f32,
+    ) {
+        for modifier_meta in modifiers.iter_mut() {
+            if let Some(_key) = modifier_meta.owner_modifier_weak.upgrade() {
+                modifier_meta.modifier.apply(value);
             }
         }
     }
