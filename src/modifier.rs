@@ -1,5 +1,6 @@
 /// Used to transform the base value of a [`super::Stat`]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum StatModifier {
     /// Add or subtract flat value. ```StatModifier::Flat(-1.0)``` means it will **subtract -1.0**
     Flat(f32),

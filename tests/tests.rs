@@ -2,7 +2,7 @@ use game_stat::prelude::*;
 
 #[test]
 fn base_value() {
-    let mut stat: Stat<3> = Stat::new(8f32);
+    let stat: Stat<3> = Stat::new(8f32);
     assert!(stat.value() == 8f32);
 }
 
@@ -105,6 +105,28 @@ fn all() {
 }
 
 #[test]
+fn integrated_modifiers() {
+    let mut stat: Stat<3> = Stat::new(10f32);
+    let _modifier_key = stat.add_modifier(StatModifier::Flat(10f32));
+
+    let mut other_stat: Stat<3> = Stat::new(5f32);
+    // apply no extra modifiers
+    assert_eq!(stat.value_with_integrated_modifiers(&other_stat), 20f32);
+
+    let _modified_key = other_stat.add_modifier(StatModifier::PercentMultiply(2.0));
+
+    assert_eq!(stat.value_with_integrated_modifiers(&other_stat), 40f32);
+    assert_eq!(stat.value(), 20f32);
+}
+
+#[test]
+fn other_base_value() {
+    let mut stat: Stat<3> = Stat::new(10f32);
+    let _modifier_key = stat.add_modifier(StatModifier::Flat(10f32));
+    assert_eq!(stat.value_with_base(0.0), 10f32);
+}
+
+#[test]
 // cautionary tale:
 // I wanted to highlight that shadowing a modifier does not drop the original value until it goes out of scope
 // shadowing makes data unaccesable, but things like reference counted things, still point to valid data
@@ -127,6 +149,7 @@ fn key_shadowing() {
 pub fn multithreaded_environment() {
     use std::sync::{Arc, Mutex};
     use std::thread::*;
+
     let stat = Arc::new(Mutex::new(Stat::<2>::new(0.0f32)));
     let stat_thread_1 = stat.clone();
     let stat_thread_2 = stat.clone();
