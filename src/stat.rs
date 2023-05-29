@@ -215,13 +215,13 @@ impl<const M: usize> Stat<M> {
     pub fn value_with_integrated_modifiers(&mut self, other_stat: &Self) -> f32 {
         other_stat.update_modifiers();
         let highest_order = self.highest_order();
-        // temporarily hold handles, Optional to sneakily instantiate array
-        const NONE: Option<StatModifierHandle> = None;
-        let mut handles: [Option<StatModifierHandle>; M] = [NONE; M];
 
         let mut other_modifiers = borrow_cell(&other_stat.modifiers);
-        for (i, modifier) in other_modifiers.iter_mut().enumerate() {
-            handles[i] = Some(self.add_modifier_with_order(
+        let mut temporary_handles: TinyVec<[StatModifierHandle; M]> =
+            TinyVec::with_capacity(other_modifiers.len());
+
+        for modifier in other_modifiers.iter_mut() {
+            temporary_handles.push(self.add_modifier_with_order(
                 modifier.modifier.clone(),
                 highest_order + 1 + modifier.order,
             ));
