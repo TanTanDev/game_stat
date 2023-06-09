@@ -4,7 +4,7 @@
 pub enum StatModifier {
     /// Add or subtract flat value. ```StatModifier::Flat(-1.0)``` means it will **subtract -1.0**
     Flat(f32),
-    /// Increase or decrease using procentage. ```StatModifier::PercentAdd(0.4)``` the value will **increase by 40%**
+    /// Increase or decrease using percentage. ```StatModifier::PercentAdd(0.4)``` the value will **increase by 40%**
     PercentAdd(f32),
     /// Direct multiplication. StatModifier::```PercentMultiply(0.5)``` the value is **halved**
     PercentMultiply(f32),
